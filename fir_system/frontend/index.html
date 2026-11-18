@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIR Management System</title>
+<style>
+/* ── Reset & Base ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:    #0F2137;
+  --blue:    #1A3A5C;
+  --accent:  #1D6FA4;
+  --accent2: #155E8E;
+  --border:  #CBD5E1;
+  --bg:      #F1F5F9;
+  --white:   #FFFFFF;
+  --text:    #1E293B;
+  --muted:   #64748B;
+  --success: #166534;
+  --success-bg: #DCFCE7;
+  --error:   #991B1B;
+  --error-bg:#FEE2E2;
+  --warn-bg: #FEF9C3;
+  --warn:    #854D0E;
+  --radius:  6px;
+  --shadow:  0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+}
+
+html { font-size: 15px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ── Topbar ────────────────────────────────────────────── */
+.topbar {
+  background: var(--navy);
+  color: #fff;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.3px;
+}
+.topbar-brand svg { opacity: 0.85; }
+.topbar-nav { display: flex; gap: 4px; }
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.75);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.nav-btn.active { background: var(--accent); color: #fff; }
+
+/* ── Layout ────────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+.container { max-width: 900px; margin: 0 auto; padding: 28px 16px; }
+
+/* ── Page title ────────────────────────────────────────── */
+.page-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-title svg { color: var(--accent); }
+
+/* ── Card ──────────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--navy);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: #F8FAFC;
+  border-radius: var(--radius) var(--radius) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-body { padding: 20px; }
+
+/* ── Upload Zone ───────────────────────────────────────── */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: #F8FAFC;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: #EFF6FF;
+}
+.upload-zone input[type="file"] { display: none; }
+.upload-icon { color: var(--accent); margin-bottom: 10px; }
+.upload-label { font-weight: 600; color: var(--navy); display: block; margin-bottom: 4px; }
+.upload-hint  { font-size: 0.8125rem; color: var(--muted); }
+.upload-filename {
+  margin-top: 12px;
+  font-size: 0.8125rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── Buttons ───────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary  { background: var(--accent);  color: #fff; }
+.btn-primary:hover:not(:disabled)  { background: var(--accent2); }
+.btn-success  { background: #15803D; color: #fff; }
+.btn-success:hover:not(:disabled)  { background: #166534; }
+.btn-danger   { background: #DC2626; color: #fff; }
+.btn-danger:hover:not(:disabled)   { background: #B91C1C; }
+.btn-outline  {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn-outline:hover:not(:disabled)  { background: #EFF6FF; }
+.btn-sm { padding: 6px 12px; font-size: 0.8125rem; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+
+/* ── Form ──────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+.form-grid.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.span2 { grid-column: span 2; }
+@media (max-width: 600px) { .form-group.span2 { grid-column: span 1; } }
+
+label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+input[type="text"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+textarea { resize: vertical; min-height: 80px; }
+
+/* ── Section divider inside form ───────────────────────── */
+.section-sep {
+  grid-column: span 2;
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
+@media (max-width: 600px) { .section-sep { grid-column: span 1; } }
+.section-heading {
+  grid-column: span 2;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--navy);
+  padding: 2px 0 2px 0;
+  border-left: 3px solid var(--accent);
+  padding-left: 8px;
+}
+@media (max-width: 600px) { .section-heading { grid-column: span 1; } }
+
+/* ── Tags input ─────────────────────────────────────────── */
+.tags-wrapper {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  min-height: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  background: var(--white);
+  cursor: text;
+  transition: border-color 0.15s;
+}
+.tags-wrapper:focus-within { border-color: var(--accent); }
+.tag {
+  background: #DBEAFE;
+  color: #1E40AF;
+  border-radius: 4px;
+  padding: 2px 8px 2px 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.tag-remove {
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: #3B82F6;
+  font-weight: 700;
+}
+.tag-remove:hover { color: #DC2626; }
+.tags-input {
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  flex: 1;
+  min-width: 100px;
+  background: transparent;
+  padding: 2px 4px;
+  color: var(--text);
+  font-family: inherit;
+}
+
+/* ── Alert / Toast ─────────────────────────────────────── */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #BBF7D0; }
+.alert-error   { background: var(--error-bg);   color: var(--error);   border: 1px solid #FECACA; }
+.alert-info    { background: #DBEAFE; color: #1E40AF; border: 1px solid #BFDBFE; }
+.alert-warn    { background: var(--warn-bg); color: var(--warn); border: 1px solid #FEF08A; }
+
+/* ── Spinner ───────────────────────────────────────────── */
+.spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 0;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-label { font-size: 0.875rem; color: var(--muted); }
+
+/* ── Table ─────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+thead tr { background: #F8FAFC; }
+th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+  color: var(--text);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #F8FAFC; }
+.td-actions { display: flex; gap: 6px; }
+
+/* ── Badge ─────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+.badge-pending  { background: var(--warn-bg);    color: var(--warn); }
+.badge-resolved { background: var(--success-bg); color: var(--success); }
+
+/* ── Detail view ───────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+}
+@media (max-width: 600px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.detail-field .val {
+  font-size: 0.9375rem;
+  color: var(--text);
+  word-break: break-word;
+}
+.detail-field.full { grid-column: span 2; }
+@media (max-width: 600px) { .detail-field.full { grid-column: span 1; } }
+
+/* ── Empty state ───────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+}
+.empty-state svg { opacity: 0.3; margin-bottom: 12px; }
+.empty-state p { font-size: 0.9375rem; }
+
+/* ── Modal ─────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+.modal-box {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--navy);
+}
+.modal-close {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 2px 6px;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 20px; }
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #F8FAFC;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+/* ── Progress steps ────────────────────────────────────── */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 24px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  position: relative;
+  min-width: 70px;
+}
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: calc(50% + 16px);
+  right: calc(-50% + 16px);
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+.step.done:not(:last-child)::after { background: var(--accent); }
+.step-circle {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  z-index: 1;
+  position: relative;
+}
+.step.active .step-circle { border-color: var(--accent); background: var(--accent); color: #fff; }
+.step.done .step-circle { border-color: var(--accent); background: var(--accent); color: #fff; }
+.step-label { font-size: 0.6875rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; text-align: center; }
+.step.active .step-label, .step.done .step-label { color: var(--accent); }
+
+/* ── Responsive tweaks ─────────────────────────────────── */
+@media (max-width: 480px) {
+  .topbar { padding: 0 12px; }
+  .topbar-brand span { display: none; }
+  .nav-btn { padding: 6px 10px; font-size: 0.8125rem; }
+  .container { padding: 16px 12px; }
+  .card-body { padding: 16px; }
+  th, td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ TOPBAR ══════════════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+    </svg>
+    <span>FIR Management System</span>
+  </div>
+  <nav class="topbar-nav">
+    <button class="nav-btn active" onclick="showPage('file')">File Complaint</button>
+    <button class="nav-btn" onclick="showPage('records')">All Records</button>
+  </nav>
+</header>
+
+<!-- ══ PAGE: FILE COMPLAINT ════════════════════════════════════ -->
+<div id="page-file" class="page active">
+<div class="container">
+
+  <h1 class="page-title">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    File New Complaint
+  </h1>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1">
+      <div class="step-circle">1</div>
+      <div class="step-label">Upload</div>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-circle">2</div>
+      <div class="step-label">Review</div>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-circle">3</div>
+      <div class="step-label">Save</div>
+    </div>
+  </div>
+
+  <!-- Alert zone -->
+  <div id="file-alert" style="display:none;"></div>
+
+  <!-- Step 1: Upload -->
+  <div id="pane-upload">
+    <div class="card">
+      <div class="card-header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        Upload Audio Complaint
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.875rem;color:var(--muted);margin-bottom:16px;">
+          Record the complainant's statement and upload the audio file. Supported formats: MP3, WAV, M4A, OGG, FLAC.
+        </p>
+        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('audio-input').click()">
+          <input type="file" id="audio-input" accept=".mp3,.wav,.m4a,.ogg,.flac,.webm" onchange="onFileSelected(this)">
+          <div class="upload-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 1a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z"/><path d="M19 11a7 7 0 0 1-14 0"/>
+              <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </div>
+          <span class="upload-label">Click to select audio file</span>
+          <span class="upload-hint">or drag and drop here</span>
+          <div class="upload-filename" id="file-name-display" style="display:none;"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-extract" onclick="extractFIR()" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            Extract FIR from Audio
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spinner -->
+    <div id="extract-spinner" style="display:none;">
+      <div class="card">
+        <div class="card-body">
+          <div class="spinner-wrap">
+            <div class="spinner"></div>
+            <div class="spinner-label">Transcribing and analysing audio — this may take 30–60 seconds…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Review & Edit Form -->
+  <div id="pane-form" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        Review &amp; Edit Extracted FIR
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:20px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Review all fields carefully. You may edit any field before saving.
+        </div>
+
+        <form id="fir-form" onsubmit="return false;">
+
+          <!-- Complainant -->
+          <div class="form-grid">
+            <div class="section-heading">Complainant Details</div>
+            <hr class="section-sep">
+            <div class="form-group">
+              <label for="f-name">Full Name</label>
+              <input type="text" id="f-name" placeholder="e.g. Rajesh Kumar">
+            </div>
+            <div class="form-group">
+              <label for="f-phone">Phone Number</label>
+              <input type="tel" id="f-phone" placeholder="e.g. 9876543210">
+            </div>
+            <div class="form-group span2">
+              <label for="f-address">Address</label>
+              <input type="text" id="f-address" placeholder="Full residential address">
+            </div>
+
+            <!-- Incident -->
+            <div class="section-heading">Incident Details</div>
+            <hr class="section-sep">
+            <div class="form-group">
+              <label for="f-type">Incident Type</label>
+              <select id="f-type">
+                <option value="">— Select —</option>
+                <option value="theft">Theft</option>
+                <option value="assault">Assault</option>
+                <option value="accident">Accident</option>
+                <option value="fraud">Fraud</option>
+                <option value="harassment">Harassment</option>
+                <option value="murder">Murder</option>
+                <option value="unknown">Other / Unknown</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="f-location">Location</label>
+              <input type="text" id="f-location" placeholder="Incident location">
+            </div>
+            <div class="form-group">
+              <label for="f-date">Date</label>
+              <input type="text" id="f-date" placeholder="e.g. 2026-03-24">
+            </div>
+            <div class="form-group">
+              <label for="f-time">Time</label>
+              <input type="text" id="f-time" placeholder="e.g. 8:30 pm">
+            </div>
+            <div class="form-group span2">
+              <label for="f-desc">Description</label>
+              <textarea id="f-desc" rows="4" placeholder="Full statement as recorded"></textarea>
+            </div>
+
+            <!-- Suspect -->
+            <div class="section-heading">Suspect Information</div>
+            <hr class="section-sep">
+            <div class="form-group span2">
+              <label for="f-suspect">Suspect Details</label>
+              <input type="text" id="f-suspect" placeholder="e.g. Two men on a black motorcycle">
+            </div>
+
+            <!-- Objects & Evidence -->
+            <div class="section-heading">Objects &amp; Evidence</div>
+            <hr class="section-sep">
+            <div class="form-group span2">
+              <label>Objects Stolen <span style="font-weight:400;font-size:0.75rem;">(Press Enter to add)</span></label>
+              <div class="tags-wrapper" id="tags-objects" onclick="document.getElementById('ti-objects').focus()">
+                <input class="tags-input" id="ti-objects" placeholder="Type item and press Enter…" onkeydown="handleTagInput(event,'objects')">
+              </div>
+            </div>
+            <div class="form-group span2">
+              <label>Evidence <span style="font-weight:400;font-size:0.75rem;">(Press Enter to add)</span></label>
+              <div class="tags-wrapper" id="tags-evidence" onclick="document.getElementById('ti-evidence').focus()">
+                <input class="tags-input" id="ti-evidence" placeholder="Type evidence and press Enter…" onkeydown="handleTagInput(event,'evidence')">
+              </div>
+            </div>
+          </div><!-- /form-grid -->
+        </form><!-- /fir-form -->
+
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="saveFIR()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save FIR to Database
+          </button>
+          <button class="btn btn-outline" onclick="resetForm()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.17"/></svg>
+            Start Over
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</div><!-- /page-file -->
+
+
+<!-- ══ PAGE: ALL RECORDS ════════════════════════════════════════ -->
+<div id="page-records" class="page">
+<div class="container">
+
+  <h1 class="page-title">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    All FIR Records
+  </h1>
+
+  <div id="records-alert" style="display:none;"></div>
+
+  <div class="card">
+    <div class="card-header" style="justify-content:space-between;">
+      <span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        FIR Registry
+      </span>
+      <button class="btn btn-outline btn-sm" onclick="loadRecords()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.17"/></svg>
+        Refresh
+      </button>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div id="records-spinner" style="display:none;">
+        <div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">Loading records…</div></div>
+      </div>
+      <div id="records-empty" class="empty-state" style="display:none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p>No FIR records found.</p>
+      </div>
+      <div class="table-wrap" id="records-table-wrap" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Complainant</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Reported At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="records-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</div><!-- /page-records -->
+
+
+<!-- ══ MODAL: View FIR ═════════════════════════════════════════ -->
+<div id="modal-view" class="modal-overlay" style="display:none;" onclick="closeModal('modal-view')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>FIR Details</span>
+      <button class="modal-close" onclick="closeModal('modal-view')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-view-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-view')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ MODAL: Confirm Delete ═══════════════════════════════════ -->
+<div id="modal-delete" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:400px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>Confirm Delete</span>
+      <button class="modal-close" onclick="closeModal('modal-delete')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-error">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        This action cannot be undone. The FIR record will be permanently deleted.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-delete')">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="confirm-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ SCRIPT ══════════════════════════════════════════════════ -->
+<script>
+const API = '';   // same origin — backend serves frontend
+
+// ── Tags state ────────────────────────────────────────────────
+const tags = { objects: [], evidence: [] };
+
+// ── Navigation ────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'records') loadRecords();
+}
+
+// ── Alert helpers ─────────────────────────────────────────────
+function showAlert(zoneId, type, msg) {
+  const icons = {
+    success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+    error:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    info:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  };
+  const el = document.getElementById(zoneId);
+  el.innerHTML = `<div class="alert alert-${type}">${icons[type] || ''} ${msg}</div>`;
+  el.style.display = 'block';
+}
+function hideAlert(zoneId) {
+  const el = document.getElementById(zoneId);
+  el.innerHTML = ''; el.style.display = 'none';
+}
+
+// ── Steps ─────────────────────────────────────────────────────
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const s = document.getElementById('step' + i);
+    s.classList.remove('active','done');
+    if (i < n)  s.classList.add('done');
+    if (i === n) s.classList.add('active');
+  });
+}
+
+// ── File selection ────────────────────────────────────────────
+function onFileSelected(input) {
+  if (!input.files.length) return;
+  const name = input.files[0].name;
+  document.getElementById('file-name-display').textContent = '📎 ' + name;
+  document.getElementById('file-name-display').style.display = 'block';
+  document.getElementById('btn-extract').disabled = false;
+  hideAlert('file-alert');
+}
+
+// Drag-and-drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const fi = document.getElementById('audio-input');
+  fi.files = e.dataTransfer.files;
+  onFileSelected(fi);
+});
+
+// ── Extract FIR ───────────────────────────────────────────────
+async function extractFIR() {
+  const fi = document.getElementById('audio-input');
+  if (!fi.files.length) return;
+
+  hideAlert('file-alert');
+  document.getElementById('pane-upload').style.display  = 'block';
+  document.getElementById('extract-spinner').style.display = 'block';
+  document.getElementById('btn-extract').disabled = true;
+
+  const fd = new FormData();
+  fd.append('file', fi.files[0]);
+
+  try {
+    const res = await fetch(`${API}/api/extract`, { method: 'POST', body: fd });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Extraction failed.');
+    }
+    const data = await res.json();
+    populateForm(data);
+    document.getElementById('extract-spinner').style.display = 'none';
+    document.getElementById('pane-upload').style.display     = 'none';
+    document.getElementById('pane-form').style.display       = 'block';
+    setStep(2);
+  } catch(e) {
+    document.getElementById('extract-spinner').style.display = 'none';
+    document.getElementById('btn-extract').disabled = false;
+    showAlert('file-alert', 'error', e.message);
+  }
+}
+
+// ── Populate form from API response ──────────────────────────
+function populateForm(d) {
+  const c = d.complainant || {}, i = d.incident || {}, s = d.suspect || {};
+  document.getElementById('f-name').value    = c.name    || '';
+  document.getElementById('f-phone').value   = c.phone   || '';
+  document.getElementById('f-address').value = c.address || '';
+  document.getElementById('f-type').value    = i.type     || '';
+  document.getElementById('f-date').value    = i.date     || '';
+  document.getElementById('f-time').value    = i.time     || '';
+  document.getElementById('f-location').value= i.location || '';
+  document.getElementById('f-desc').value    = i.description || '';
+  document.getElementById('f-suspect').value = s.info    || '';
+
+  tags.objects  = d.objects_stolen || [];
+  tags.evidence = d.evidence       || [];
+  renderTags('objects');
+  renderTags('evidence');
+}
+
+// ── Tag management ────────────────────────────────────────────
+function renderTags(type) {
+  const wrap = document.getElementById('tags-' + type);
+  const inp  = document.getElementById('ti-' + type);
+  wrap.querySelectorAll('.tag').forEach(t => t.remove());
+  tags[type].forEach((val, idx) => {
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.innerHTML = `${val}<span class="tag-remove" onclick="removeTag('${type}',${idx})">×</span>`;
+    wrap.insertBefore(t, inp);
+  });
+}
+function handleTagInput(e, type) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/,$/, '');
+    if (val && !tags[type].includes(val)) {
+      tags[type].push(val);
+      renderTags(type);
+    }
+    e.target.value = '';
+  }
+}
+function removeTag(type, idx) {
+  tags[type].splice(idx, 1);
+  renderTags(type);
+}
+
+// ── Build payload from form ───────────────────────────────────
+function buildPayload() {
+  return {
+    complainant: {
+      name:    document.getElementById('f-name').value.trim(),
+      phone:   document.getElementById('f-phone').value.trim(),
+      address: document.getElementById('f-address').value.trim(),
+    },
+    incident: {
+      type:        document.getElementById('f-type').value,
+      date:        document.getElementById('f-date').value.trim(),
+      time:        document.getElementById('f-time').value.trim(),
+      location:    document.getElementById('f-location').value.trim(),
+      description: document.getElementById('f-desc').value.trim(),
+    },
+    suspect:        { info: document.getElementById('f-suspect').value.trim() },
+    objects_stolen: [...tags.objects],
+    evidence:       [...tags.evidence],
+  };
+}
+
+// ── Save FIR ──────────────────────────────────────────────────
+async function saveFIR() {
+  hideAlert('file-alert');
+  const payload = buildPayload();
+
+  if (!payload.complainant.name && !payload.incident.description) {
+    showAlert('file-alert', 'error', 'Please fill at least the complainant name or incident description.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/fir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Save failed.');
+    const data = await res.json();
+    setStep(3);
+    document.getElementById('pane-form').style.display = 'none';
+    showAlert('file-alert', 'success',
+      `FIR #${data.id} saved successfully. <a href="#" onclick="showPage_records()" style="color:var(--success);font-weight:700;text-decoration:underline;">View all records →</a>`);
+  } catch(e) {
+    showAlert('file-alert', 'error', e.message);
+  }
+}
+
+function showPage_records() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-records').classList.add('active');
+  document.querySelectorAll('.nav-btn')[1].classList.add('active');
+  loadRecords();
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+function resetForm() {
+  document.getElementById('audio-input').value = '';
+  document.getElementById('file-name-display').style.display = 'none';
+  document.getElementById('btn-extract').disabled = true;
+  document.getElementById('pane-form').style.display   = 'none';
+  document.getElementById('pane-upload').style.display = 'block';
+  document.getElementById('extract-spinner').style.display = 'none';
+  tags.objects = []; tags.evidence = [];
+  renderTags('objects'); renderTags('evidence');
+  document.getElementById('fir-form').reset();
+  hideAlert('file-alert');
+  setStep(1);
+}
+
+// ── Load records ──────────────────────────────────────────────
+async function loadRecords() {
+  hideAlert('records-alert');
+  document.getElementById('records-spinner').style.display     = 'block';
+  document.getElementById('records-empty').style.display       = 'none';
+  document.getElementById('records-table-wrap').style.display  = 'none';
+
+  try {
+    const res = await fetch(`${API}/api/fir`);
+    if (!res.ok) throw new Error('Failed to load records.');
+    const rows = await res.json();
+
+    document.getElementById('records-spinner').style.display = 'none';
+
+    if (!rows.length) {
+      document.getElementById('records-empty').style.display = 'block';
+      return;
+    }
+
+    const tbody = document.getElementById('records-tbody');
+    tbody.innerHTML = '';
+    rows.forEach(r => {
+      const badge = r.status === 'resolved'
+        ? `<span class="badge badge-resolved">Resolved</span>`
+        : `<span class="badge badge-pending">Pending</span>`;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${r.id}</strong></td>
+          <td>${r.c_name || '—'}</td>
+          <td>${r.i_type || '—'}</td>
+          <td>${r.i_date || '—'}</td>
+          <td>${r.i_location || '—'}</td>
+          <td>${badge}</td>
+          <td style="white-space:nowrap;">${r.reported_at || '—'}</td>
+          <td>
+            <div class="td-actions">
+              <button class="btn btn-outline btn-sm" onclick="viewFIR(${r.id})">View</button>
+              <button class="btn btn-danger btn-sm" onclick="confirmDelete(${r.id})">Delete</button>
+            </div>
+          </td>
+        </tr>`;
+    });
+    document.getElementById('records-table-wrap').style.display = 'block';
+  } catch(e) {
+    document.getElementById('records-spinner').style.display = 'none';
+    showAlert('records-alert', 'error', e.message);
+  }
+}
+
+// ── View FIR modal ────────────────────────────────────────────
+async function viewFIR(id) {
+  document.getElementById('modal-view-body').innerHTML =
+    '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  document.getElementById('modal-view').style.display = 'flex';
+
+  try {
+    const res = await fetch(`${API}/api/fir/${id}`);
+    if (!res.ok) throw new Error('Not found.');
+    const d = await res.json();
+    const c = d.complainant, i = d.incident, s = d.suspect, m = d.metadata;
+
+    const objHtml = d.objects_stolen.length
+      ? d.objects_stolen.map(o => `<span class="tag">${o}</span>`).join(' ')
+      : '<span style="color:var(--muted)">—</span>';
+    const evHtml = d.evidence.length
+      ? d.evidence.map(e => `<span class="tag">${e}</span>`).join(' ')
+      : '<span style="color:var(--muted)">—</span>';
+
+    document.getElementById('modal-view-body').innerHTML = `
+      <div style="margin-bottom:14px;">
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">FIR #${d.id}</span>
+        &nbsp; <span class="badge ${m.status==='resolved'?'badge-resolved':'badge-pending'}">${m.status}</span>
+        <span style="float:right;font-size:0.75rem;color:var(--muted);">${m.reported_at}</span>
+      </div>
+      <div style="background:#F8FAFC;border-radius:4px;padding:12px 16px;margin-bottom:16px;border-left:3px solid var(--accent);">
+        <div style="font-size:0.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Complainant</div>
+        <div class="detail-grid">
+          <div class="detail-field"><label>Name</label><div class="val">${c.name||'—'}</div></div>
+          <div class="detail-field"><label>Phone</label><div class="val">${c.phone||'—'}</div></div>
+          <div class="detail-field full"><label>Address</label><div class="val">${c.address||'—'}</div></div>
+        </div>
+      </div>
+      <div style="background:#F8FAFC;border-radius:4px;padding:12px 16px;margin-bottom:16px;border-left:3px solid #10B981;">
+        <div style="font-size:0.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Incident</div>
+        <div class="detail-grid">
+          <div class="detail-field"><label>Type</label><div class="val">${i.type||'—'}</div></div>
+          <div class="detail-field"><label>Location</label><div class="val">${i.location||'—'}</div></div>
+          <div class="detail-field"><label>Date</label><div class="val">${i.date||'—'}</div></div>
+          <div class="detail-field"><label>Time</label><div class="val">${i.time||'—'}</div></div>
+          <div class="detail-field full"><label>Description</label><div class="val">${i.description||'—'}</div></div>
+        </div>
+      </div>
+      <div style="background:#F8FAFC;border-radius:4px;padding:12px 16px;margin-bottom:16px;border-left:3px solid #F59E0B;">
+        <div style="font-size:0.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suspect</div>
+        <div class="val">${s.info||'—'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:#F8FAFC;border-radius:4px;padding:12px 16px;border-left:3px solid #EF4444;">
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Objects Stolen</div>
+          <div>${objHtml}</div>
+        </div>
+        <div style="background:#F8FAFC;border-radius:4px;padding:12px 16px;border-left:3px solid #6366F1;">
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Evidence</div>
+          <div>${evHtml}</div>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('modal-view-body').innerHTML =
+      `<div class="alert alert-error">${e.message}</div>`;
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────────
+function confirmDelete(id) {
+  document.getElementById('modal-delete').style.display = 'flex';
+  document.getElementById('confirm-delete-btn').onclick = () => deleteFIR(id);
+}
+
+async function deleteFIR(id) {
+  closeModal('modal-delete');
+  try {
+    const res = await fetch(`${API}/api/fir/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed.');
+    showAlert('records-alert', 'success', `FIR #${id} deleted.`);
+    loadRecords();
+  } catch(e) {
+    showAlert('records-alert', 'error', e.message);
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+</script>
+</body>
+</html>
